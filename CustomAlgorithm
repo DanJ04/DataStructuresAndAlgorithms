@@ -1,0 +1,129 @@
+#include <iostream>
+#include <unordered_map>
+#include <unordered_set>
+#include <queue>
+#include <algorithm>
+
+using namespace std;
+
+// Structure to represent an edge with a destination node and a weight
+struct Edge {
+    char destination;
+    int weight;
+};
+
+// Class to represent a graph using an adjacency list
+class Graph {
+public:
+    // Adjacency list using an unordered map
+    unordered_map<char, unordered_map<char, int>> adjList;
+
+    // Function to add an edge to the graph
+    void addEdge(char src, char dest, int weight) {
+        adjList[src][dest] = weight;
+        adjList[dest][src] = weight; // Assuming the graph is undirected
+    }
+
+    // Function to get the edges of a given node
+    unordered_map<char, int>& getEdges(char nodeId) {
+        return adjList[nodeId];
+    }
+};
+
+// Custom BFS algorithm to find the shortest path in a weighted graph
+pair<int, vector<char>> custom_bfs(Graph& graph, char start, char end) {
+    unordered_map<char, int> distances; // Map to store the shortest distance to each node
+    unordered_map<char, char> parents;  // Map to store the parent of each node in the path
+    unordered_set<char> visited;        // Set to keep track of visited nodes
+    queue<char> frontier;               // Queue for BFS traversal
+
+    frontier.push(start);               // Start BFS from the starting node
+    distances[start] = 0;               // Distance to the start node is 0
+    visited.insert(start);              // Mark the start node as visited
+
+    // BFS loop
+    while (!frontier.empty()) {
+        char current = frontier.front();
+        frontier.pop();
+
+        // If the end node is reached, reconstruct the path
+        if (current == end) {
+            vector<char> path;
+            for (char at = end; at != 0; at = parents[at]) {
+                path.push_back(at);
+            }
+            reverse(path.begin(), path.end()); // Reverse the path to get the correct order
+            return { distances[end], path };   // Return the distance and the path
+        }
+
+        // Process each neighbour of the current node
+        for (const auto& edge : graph.getEdges(current)) {
+            char neighbour = edge.first;
+            int new_dist = distances[current] + edge.second;
+
+            // If the neighbour is not visited or a shorter path is found
+            if (visited.find(neighbour) == visited.end() || new_dist < distances[neighbour]) {
+                visited.insert(neighbour);    // Mark the neighbour as visited
+                parents[neighbour] = current; // Update the parent of the neighbour
+                distances[neighbour] = new_dist; // Update the distance to the neighbour
+                frontier.push(neighbour);     // Add the neighbour to the queue
+            }
+        }
+    }
+
+    return { INT_MAX, {} }; // Return infinity and an empty path if no path is found
+}
+
+int main() {
+    Graph graph;
+    // Add edges to the graph
+    graph.addEdge('A', 'B', 10);
+    graph.addEdge('A', 'D', 12);
+    graph.addEdge('A', 'G', 11);
+    graph.addEdge('A', 'H', 4);
+    graph.addEdge('B', 'D', 8);
+    graph.addEdge('B', 'H', 20);
+    graph.addEdge('C', 'D', 17);
+    graph.addEdge('C', 'E', 8);
+    graph.addEdge('C', 'G', 13);
+    graph.addEdge('C', 'H', 10);
+    graph.addEdge('D', 'F', 16);
+    graph.addEdge('D', 'G', 24);
+    graph.addEdge('D', 'H', 14);
+    graph.addEdge('E', 'F', 8);
+    graph.addEdge('E', 'G', 11);
+    graph.addEdge('E', 'H', 5);
+    graph.addEdge('F', 'G', 18);
+    graph.addEdge('F', 'H', 21);
+    graph.addEdge('G', 'H', 30);
+
+    // Get start and end nodes from the user
+    char start, end;
+    cout << "Enter start point (A-H): ";
+    cin >> start;
+    cout << "Enter end point (A-H): ";
+    cin >> end;
+
+    start = toupper(start); // Convert to uppercase
+    end = toupper(end);     // Convert to uppercase
+
+    // Find the shortest path using the custom BFS algorithm
+    auto result = custom_bfs(graph, start, end);
+    int shortest_distance = result.first;
+    vector<char> shortest_path = result.second;
+
+    // Display the result
+    if (shortest_distance != INT_MAX) {
+        cout << "Shortest distance from " << start << " to " << end << ": " << shortest_distance << endl;
+        cout << "Shortest path: ";
+        for (const auto& node : shortest_path) {
+            cout << node << " -> ";
+        }
+        cout << end << endl;
+    }
+    else {
+        cout << "No path found from " << start << " to " << end << endl;
+    }
+
+    return 0;
+}
