@@ -1,0 +1,122 @@
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <unordered_map>
+#include <climits>
+#include <algorithm>
+
+using namespace std;
+
+// Structure to represent an edge with a destination node and a weight
+struct Edge {
+    char destination;
+    int weight;
+};
+
+// Structure to represent a node with an ID and a list of edges
+struct Node {
+    char id;
+    vector<Edge> edges;
+};
+
+// Function to implement Dijkstra's algorithm to find the shortest path
+pair<int, vector<char>> dijkstra(const vector<Node>& graph, char start, char end) {
+    // Priority queue to manage nodes based on their tentative distances
+    priority_queue<pair<int, char>, vector<pair<int, char>>, greater<pair<int, char>>> pq;
+    // Map to store the shortest distance to each node
+    unordered_map<char, int> distances;
+    // Map to store the previous node in the path
+    unordered_map<char, char> previous;
+
+    // Initialize distances to infinity for all nodes
+    for (const auto& node : graph) {
+        distances[node.id] = INT_MAX;
+    }
+
+    // Distance to the start node is 0
+    distances[start] = 0;
+    pq.push({ 0, start }); // Add start node to the priority queue
+
+    // Main loop of the algorithm
+    while (!pq.empty()) {
+        char current = pq.top().second;
+        int current_dist = pq.top().first;
+        pq.pop();
+
+        // If the end node is reached, reconstruct the path
+        if (current == end) {
+            vector<char> path;
+            char node = current;
+            while (node != start) {
+                path.push_back(node);
+                node = previous[node];
+            }
+            path.push_back(start);
+            reverse(path.begin(), path.end()); // Reverse the path to get the correct order
+            return { current_dist, path }; // Return the distance and the path
+        }
+
+        // Process each neighbour of the current node
+        for (const auto& edge : graph[current - 'A'].edges) {
+            char neighbour = edge.destination;
+            int weight = edge.weight;
+            int new_dist = current_dist + weight;
+
+            // If a shorter path to the neighbour is found
+            if (new_dist < distances[neighbour]) {
+                distances[neighbour] = new_dist; // Update the distance to the neighbour
+                pq.push({ new_dist, neighbour }); // Add the neighbour to the priority queue
+                previous[neighbour] = current; // Update the previous node of the neighbour
+            }
+        }
+    }
+
+    return { INT_MAX, {} }; // Return infinity and an empty path if no path is found
+}
+
+int main() {
+    // Define the graph with nodes and edges
+    vector<Node> graph = {
+        {{'A'}, {{'B', 10}, {'D', 12}, {'G', 11}, {'H', 4}}},
+        {{'B'}, {{'A', 10}, {'D', 8}, {'H', 20}}},
+        {{'C'}, {{'D', 17}, {'E', 8}, {'G', 13}, {'H', 10}}},
+        {{'D'}, {{'A', 12}, {'B', 8}, {'C', 17}, {'F', 16}, {'G', 24}, {'H', 14}}},
+        {{'E'}, {{'C', 8}, {'F', 8}, {'G', 11}, {'H', 5}}},
+        {{'F'}, {{'D', 16}, {'E', 8}, {'G', 18}, {'H', 21}}},
+        {{'G'}, {{'A', 11}, {'C', 13}, {'D', 24}, {'E', 11}, {'F', 18}, {'H', 30}}},
+        {{'H'}, {{'A', 4}, {'B', 20}, {'C', 10}, {'D', 14}, {'E', 5}, {'F', 21}, {'G', 30}}}
+    };
+
+    // Get start and end nodes from the user
+    char start, end;
+    cout << "Enter start point (A-H): ";
+    cin >> start;
+    cout << "Enter end point (A-H): ";
+    cin >> end;
+
+    start = toupper(start); // Convert to uppercase
+    end = toupper(end);     // Convert to uppercase
+
+    // Find the shortest path using Dijkstra's algorithm
+    auto result = dijkstra(graph, start, end);
+    int shortest_distance = result.first;
+    vector<char> shortest_path = result.second;
+
+    // Display the result
+    if (shortest_distance != INT_MAX) {
+        cout << "Shortest distance from " << start << " to " << end << ": " << shortest_distance << endl;
+        cout << "Shortest path: ";
+        for (size_t i = 0; i < shortest_path.size(); ++i) {
+            cout << shortest_path[i];
+            if (i < shortest_path.size() - 1) {
+                cout << " -> ";
+            }
+        }
+        cout << endl;
+    }
+    else {
+        cout << "No path found from " << start << " to " << end << endl;
+    }
+
+    return 0;
+}
